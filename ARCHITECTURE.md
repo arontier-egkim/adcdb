@@ -213,7 +213,7 @@ SELECT status, COUNT(*) AS cnt FROM adc GROUP BY status
 1. **SPA, not SSR** — Mol* v5 calls React internally. Next.js 14's SSR creates a React runtime conflict (`render is not a function`). Plain React + Vite = one React runtime = Mol* works.
 2. **No state management library** — URL params (via `useSearchParams`) for search state, React state for UI. That's it.
 3. **API calls via `fetch`** in `useEffect` — no axios, no SWR, no react-query. Simple `useState` + `useEffect` pattern for all data fetching.
-4. **Mol\* lazy-loaded** — `React.lazy(() => import('./MolViewer'))` + `<Suspense>`. It's heavy (~2MB), only load on ADC detail page.
+4. **Mol\* lazy-loaded** — `React.lazy(() => import('./MolViewer'))` + `<Suspense>`. It's heavy (~2MB), only load on ADC detail page. Sequence panel enabled at the bottom of the viewer (`sequencePanel: { isHidden: false }`) — shows amino acid sequences of all chains with click-to-highlight in 3D.
 5. **No CORS proxy needed** — Backend has CORSMiddleware. Frontend fetches directly from `http://localhost:8001`.
 6. **RDKit WASM for 2D structures** — `<RDKitProvider>` wraps the app root (loads WASM once). The worker file (`rdkit-worker-2.10.2.js`), `RDKit_minimal.js`, and `RDKit_minimal.wasm` must be in the `public/` folder so the browser can load them. `<MoleculeRepresentation>` renders interactive SVGs from SMILES on Linker and Payload detail pages via a `<MoleculeDrawing>` wrapper component. Linker SMILES with attachment points (`[*:1]`, `[*:2]`) are cleaned to `[H]` before rendering. **Drawing style: ACS1996** — exact values from RDKit's `rdMolDraw2D.SetACS1996Mode()`, passed via the `details` prop to `<MoleculeRepresentation>`:
 
@@ -229,6 +229,8 @@ SELECT status, COUNT(*) AS cnt FROM adc GROUP BY status
    ```
 
    **Zoom and scale:** `<MoleculeRepresentation>` is set with `zoomable={true}` for mouse wheel zoom in/out (powered by `@visx/zoom`, already a dependency). The molecule renders at 2x default scale by doubling `fixedBondLength` from 7.2 to 14.4 — this makes bonds (and thus the entire molecule) twice as large inside the 400x300 canvas. All other ACS1996 parameters remain at their spec values.
+
+   **SMILES display:** Raw SMILES strings on Linker and Payload detail pages are rendered in monospace font (`font-mono`), wrapped at 100 characters per line for readability.
 
 ## 3D Structure Pipeline (Offline)
 

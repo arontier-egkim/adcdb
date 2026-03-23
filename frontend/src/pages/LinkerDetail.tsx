@@ -33,7 +33,7 @@ export default function LinkerDetail() {
           <dt className="text-muted-foreground">Coupling Chemistry</dt><dd>{linker.coupling_chemistry || "-"}</dd>
           <dt className="text-muted-foreground">Formula</dt><dd>{linker.formula || "-"}</dd>
           <dt className="text-muted-foreground">Mol. Weight</dt><dd>{linker.mol_weight ? `${linker.mol_weight} Da` : "-"}</dd>
-          <dt className="text-muted-foreground">SMILES</dt><dd className="break-all text-xs">{linker.smiles || "-"}</dd>
+          <dt className="text-muted-foreground">SMILES</dt><dd className="text-xs font-mono break-all">{linker.smiles || "-"}</dd>
         </dl>
       </div>
       {linker.smiles && <MoleculeDrawing smiles={linker.smiles} />}

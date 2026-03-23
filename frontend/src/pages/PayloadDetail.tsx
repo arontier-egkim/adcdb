@@ -34,7 +34,7 @@ export default function PayloadDetail() {
           <dd>{payload.bystander_effect == null ? "-" : payload.bystander_effect ? "Yes" : "No"}</dd>
           <dt className="text-muted-foreground">Formula</dt><dd>{payload.formula || "-"}</dd>
           <dt className="text-muted-foreground">Mol. Weight</dt><dd>{payload.mol_weight ? `${payload.mol_weight} Da` : "-"}</dd>
-          <dt className="text-muted-foreground">SMILES</dt><dd className="break-all text-xs">{payload.smiles || "-"}</dd>
+          <dt className="text-muted-foreground">SMILES</dt><dd className="text-xs font-mono break-all">{payload.smiles || "-"}</dd>
         </dl>
       </div>
       {payload.smiles && payload.smiles !== "C" && <MoleculeDrawing smiles={payload.smiles} />}

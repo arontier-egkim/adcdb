@@ -134,8 +134,8 @@ Payload ──────────────┘
 | `/adc/:id` | ADC detail: all fields, linked entities, activity data, **3D viewer** |
 | `/antibody/:id` | Antibody detail: sequences, linked ADCs |
 | `/antigen/:id` | Antigen detail: gene info, linked ADCs |
-| `/linker/:id` | Linker detail: **2D structure via RDKit WASM** (ACS1996 style, zoomable, 2x default scale), properties |
-| `/payload/:id` | Payload detail: **2D structure via RDKit WASM** (ACS1996 style, zoomable, 2x default scale), MOA, properties |
+| `/linker/:id` | Linker detail: **2D structure via RDKit WASM** (ACS1996 style, zoomable, 2x default scale), properties, SMILES in monospace (100 chars/line) |
+| `/payload/:id` | Payload detail: **2D structure via RDKit WASM** (ACS1996 style, zoomable, 2x default scale), MOA, properties, SMILES in monospace (100 chars/line) |
 | `/browse` | Browse by status, antigen, payload target — filterable table |
 | `/about` | Citations, data sources, contact |
 
@@ -178,7 +178,7 @@ GET  /api/v1/stats                 # aggregate counts for homepage charts
 5. **Save as `.pdb`** with chain IDs: H/h (heavy pair), L/l (light pair), D1/D2/.../Dn (drug-linker units). Store path in `adc.structure_3d_path`.
 6. **Graceful failure:** If any step fails (antibody not in AlphaFold DB, conformer embedding fails, conjugation site unresolvable), set `structure_3d_path = NULL`, log the error, continue to the next ADC. Do not block the batch.
 
-**Viewer:** Mol* embedded in the ADC detail page. Shows antibody as cartoon, linker-payload as ball-and-stick, colored by component. Label: "Predicted/modeled structure — approximate spatial arrangement."
+**Viewer:** Mol* embedded in the ADC detail page. Shows antibody as cartoon, linker-payload as ball-and-stick, colored by component. **Sequence panel enabled at the bottom** — displays amino acid sequences of all chains, clickable to highlight residues in 3D. Label: "Predicted/modeled structure — approximate spatial arrangement."
 
 ## Project Structure
 

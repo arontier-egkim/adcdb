@@ -27,6 +27,7 @@ make setup
 ```
 
 `make setup` does the following:
+
 1. Starts MariaDB 11.4 LTS in Docker
 2. Waits for it to be ready
 3. Runs Alembic migrations (creates all 6 tables)
@@ -47,24 +48,24 @@ Open http://localhost:5173 in your browser.
 
 ## Makefile Commands
 
-| Command | What it does |
-|---------|-------------|
-| `make db` | Start MariaDB Docker container |
-| `make migrate` | Run Alembic database migrations |
-| `make seed` | Seed database with ~50 ADCs |
+| Command           | What it does                                                    |
+| ----------------- | --------------------------------------------------------------- |
+| `make db`         | Start MariaDB Docker container                                  |
+| `make migrate`    | Run Alembic database migrations                                 |
+| `make seed`       | Seed database with ~50 ADCs                                     |
 | `make structures` | Generate 3D PDB files for all ADCs with `linker_payload_smiles` |
-| `make backend` | Start FastAPI server on port 8001 (with hot reload) |
-| `make frontend` | Start Vite dev server on port 5173 |
-| `make setup` | Run db + migrate + seed + structures in order |
+| `make backend`    | Start FastAPI server on port 8001 (with hot reload)             |
+| `make frontend`   | Start Vite dev server on port 5173                              |
+| `make setup`      | Run db + migrate + seed + structures in order                   |
 
 ## URLs
 
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost:5173 |
-| Backend API | http://localhost:8001/api/v1 |
-| Swagger docs | http://localhost:8001/docs |
-| MariaDB | localhost:3306 (user: `adcdb`, password: `adcdb_pass`) |
+| Service      | URL                                                    |
+| ------------ | ------------------------------------------------------ |
+| Frontend     | http://localhost:5173                                  |
+| Backend API  | http://localhost:8001/api/v1                           |
+| Swagger docs | http://localhost:8001/docs                             |
+| MariaDB      | localhost:3306 (user: `adcdb`, password: `adcdb_pass`) |
 
 ## Project Structure
 
@@ -140,26 +141,26 @@ cp frontend/.env.example frontend/.env
 
 **Backend** (`backend/.env`):
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ADCDB_DATABASE_URL` | `mysql+asyncmy://adcdb:adcdb_pass@127.0.0.1:3306/adcdb` | MariaDB connection |
-| `ADCDB_CORS_ORIGINS` | `["http://localhost:5173"]` | Allowed CORS origins |
-| `ADCDB_PORT` | `8001` | Server port |
+| Variable             | Default                                                 | Description          |
+| -------------------- | ------------------------------------------------------- | -------------------- |
+| `ADCDB_DATABASE_URL` | `mysql+asyncmy://adcdb:adcdb_pass@127.0.0.1:3306/adcdb` | MariaDB connection   |
+| `ADCDB_CORS_ORIGINS` | `["http://localhost:5173"]`                             | Allowed CORS origins |
+| `ADCDB_PORT`         | `8001`                                                  | Server port          |
 
 **Frontend** (`frontend/.env`):
 
-| Variable | Default | Description |
-|----------|---------|-------------|
+| Variable       | Default                        | Description          |
+| -------------- | ------------------------------ | -------------------- |
 | `VITE_API_URL` | `http://localhost:8001/api/v1` | Backend API base URL |
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | FastAPI, Python 3.12, SQLAlchemy 2.0 (async), Alembic |
-| Database | MariaDB 11.4 LTS, asyncmy driver |
-| Frontend | React 18, Vite, shadcn/ui (blue theme), React Router v7 |
-| 3D Viewer | Mol* (molstar) |
-| 2D Structures | RDKit WASM (`@iktos-oss/rdkit-provider` + `@iktos-oss/molecule-representation`), ACS1996 drawing style |
-| Chemistry (server) | RDKit Python (fingerprints, conformers, molecular properties) |
-| Sequence | Biopython PairwiseAligner |
+| Layer              | Technology                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| Backend            | FastAPI, Python 3.12, SQLAlchemy 2.0 (async), Alembic                                                  |
+| Database           | MariaDB 11.4 LTS, asyncmy driver                                                                       |
+| Frontend           | React 18, Vite, shadcn/ui (blue theme), React Router v7                                                |
+| 3D Viewer          | Mol\* (molstar)                                                                                        |
+| 2D Structures      | RDKit WASM (`@iktos-oss/rdkit-provider` + `@iktos-oss/molecule-representation`), ACS1996 drawing style |
+| Chemistry (server) | RDKit Python (fingerprints, conformers, molecular properties)                                          |
+| Sequence           | Biopython PairwiseAligner                                                                              |

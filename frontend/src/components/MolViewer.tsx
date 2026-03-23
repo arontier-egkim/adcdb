@@ -38,7 +38,13 @@ export default function MolViewer({ adcId }: { adcId: string }) {
             layout: {
               initial: {
                 isExpanded: false,
-                showControls: false,
+                showControls: true,
+                regionState: {
+                  left: "hidden",
+                  top: "hidden",
+                  right: "hidden",
+                  bottom: "full",  // sequence viewer
+                },
               },
             },
           },

@@ -133,6 +133,8 @@ SMILES fields on Linker and Payload are consumed in two places:
 1. **Server-side (Python RDKit):** Morgan fingerprint computation, molecular weight, 3D conformer generation. Handles `[*:1]`/`[*:2]` by replacing with `[H]` before processing.
 2. **Client-side (RDKit WASM via `@iktos-oss/rdkit-provider`):** 2D SVG rendering on detail pages using **ACS1996 drawing style** — exact parameter values from RDKit's `rdMolDraw2D.SetACS1996Mode()` (bondLineWidth=0.6, scaleBondWidth=false, fixedBondLength=7.2, etc.), passed via the `details` prop to `<MoleculeRepresentation>`. Rendered at 2x default scale (`fixedBondLength` doubled from 7.2 to 14.4) with mouse wheel zoom enabled (`zoomable={true}`). Linker SMILES with `[*:1]`/`[*:2]` must be cleaned to `[H]` before passing to the renderer. Worker and WASM files must be in `public/`.
 
+**Display:** Raw SMILES strings are shown in monospace font (`font-mono`) on detail pages, wrapped at 100 characters per line for readability.
+
 ### Linker SMILES attachment points
 
 Linker SMILES use labeled attachment points: `[*:1]` for the antibody-facing end, `[*:2]` for the payload-facing end. This makes standard InChI/InChIKey generation invalid for linkers (RDKit will error on wildcard atoms). Therefore `inchi` and `inchikey` on Linker are nullable.
@@ -143,4 +145,4 @@ The pre-connected linker-payload molecule stored on the ADC record. This is **cu
 
 ## Notes on `structure_3d_path`
 
-Nullable. Set to NULL when the 3D pipeline fails for any reason (antibody structure unavailable, conformer embedding fails, conjugation site unresolvable). The frontend checks for NULL and shows "Structure not yet available" instead of the Mol* viewer.
+Nullable. Set to NULL when the 3D pipeline fails for any reason (antibody structure unavailable, conformer embedding fails, conjugation site unresolvable). The frontend checks for NULL and shows "Structure not yet available" instead of the Mol* viewer. When displayed, the Mol* viewer shows a sequence panel at the bottom with clickable residues for all chains.
