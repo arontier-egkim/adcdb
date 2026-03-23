@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+.python-version
+
+# Node
+node_modules/
+dist/
+
+# Vite
+*.local
+
+# Next.js (backup)
+.next/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+
+# Generated structures
+backend/structures/*.pdb
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/settings.local.json
+
+# Backup of old frontend
+frontend-nextjs-backup/

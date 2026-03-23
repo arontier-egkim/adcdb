@@ -1,0 +1,16 @@
+services:
+  mariadb:
+    image: mariadb:11.4
+    container_name: adcdb-mariadb
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: adcdb_root
+      MARIADB_DATABASE: adcdb
+      MARIADB_USER: adcdb
+      MARIADB_PASSWORD: adcdb_pass
+    volumes:
+      - adcdb-mariadb-data:/var/lib/mysql
+
+volumes:
+  adcdb-mariadb-data:

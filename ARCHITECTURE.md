@@ -4,9 +4,9 @@
 
 ```
 ┌─────────────────────┐     ┌──────────────────────┐
-│   Next.js Frontend  │────▶│   FastAPI Backend     │
+│  React+Vite Frontend│────▶│   FastAPI Backend     │
 │   (shadcn/ui, blue) │     │   (Python 3.12)       │
-│   port 3000         │     │   port 8000            │
+│   port 5173         │     │   port 8001            │
 └─────────────────────┘     └──────────┬───────────┘
                                        │
                             ┌──────────▼───────────┐
@@ -27,7 +27,7 @@
 - `fastapi` + `uvicorn` — web server
 - `sqlalchemy` 2.0 — ORM (async)
 - `alembic` — migrations
-- `aiomysql` — MariaDB async driver
+- `asyncmy` — MariaDB async driver (actively maintained; `aiomysql` is abandoned since 2021)
 - `pydantic` 2.x — schemas (comes with FastAPI)
 - `rdkit` — chemistry (SMILES parsing, fingerprints, conformer generation)
 - `biopython` — sequence alignment
@@ -39,14 +39,16 @@
 3. **File-based structure storage** — PDB files on disk, path stored in DB. No blob storage. If you outgrow disk, move to S3.
 4. **RDKit for everything chemistry** — molecular weight, fingerprints, 2D depictions, 3D conformers. One library.
 5. **No celery/task queue** — 3D structure generation is a batch job run offline, not on-demand. Pre-compute and store.
+6. **CORSMiddleware** — Frontend (Vite default port 5173) calls backend (port 8001). Add `CORSMiddleware` to the FastAPI app with `allow_origins=["http://localhost:5173"]` in dev. Without this, the browser blocks every API call.
+7. **UUIDv7 primary keys** — Time-sorted (RFC 9562) so B-tree inserts are sequential. Avoids page fragmentation that random UUID v4 causes in MariaDB. Use `uuid7()` from the `uuid_utils` package.
+8. **`lazy="raise"` on all ORM relationships** — Accidental lazy-loads throw at dev time instead of silently firing N+1 queries.
+9. **ON DELETE RESTRICT on all component FKs** — Prevent accidental cascade deletion. ADCActivity uses ON DELETE CASCADE (activities have no meaning without their ADC).
 
 ### Query Strategy — Avoiding N+1
 
 Moving `antigen_id` to Antibody (biologically correct) creates a 2-hop path for every query that needs antigen info. **Every endpoint** is analyzed below.
 
 **Global rule: No lazy-loading. Every relationship must be explicitly joined or eagerly loaded.**
-
-Set `lazy="raise"` on all SQLAlchemy relationships so accidental lazy-loads throw an error at dev time instead of silently firing queries.
 
 #### Forward queries (ADC → components)
 
@@ -81,9 +83,9 @@ Query 2: Activities for this ADC (`WHERE adc_id = :id`). Flat rows, no nested re
 
 #### Reverse queries (component detail → linked ADCs)
 
-These are the dangerous ones. Every component detail page shows "linked ADCs".
+These are the dangerous ones. Every component detail page shows "linked ADCs". **Always query from the ADC side with JOINs, never traverse backward through ORM relationships.**
 
-**`GET /api/v1/antibodies/{id}` — Antibody detail (1 query)**
+**`GET /api/v1/antibodies/{id}` — Antibody detail (2 queries)**
 
 ```sql
 SELECT ab.*, ag.name AS antigen_name FROM antibody ab
@@ -99,6 +101,7 @@ FROM adc
 JOIN linker l  ON adc.linker_id = l.id
 JOIN payload p ON adc.payload_id = p.id
 WHERE adc.antibody_id = :antibody_id
+LIMIT 50 OFFSET 0
 ```
 
 **`GET /api/v1/antigens/{id}` — Antigen detail (worst case, e.g. HER2 = 1,311 ADCs)**
@@ -106,10 +109,8 @@ WHERE adc.antibody_id = :antibody_id
 Do NOT traverse Antigen → Antibodies → ADCs. Go from ADC side with JOINs:
 
 ```sql
--- 1 query for the antigen itself
 SELECT * FROM antigen WHERE id = :id
 
--- 1 query for ALL linked ADCs (reverse 2-hop, but as a single JOIN)
 SELECT adc.*, ab.name AS antibody_name,
        l.name AS linker_name, p.name AS payload_name
 FROM adc
@@ -149,7 +150,7 @@ Search across entity `name` fields with `MATCH ... AGAINST`. Return results grou
 
 **`GET /api/v1/search/structure` — SMILES similarity**
 
-RDKit computes Tanimoto in Python. Query returns Linker/Payload rows ranked by similarity. No linked-ADC expansion needed in search results — user clicks through to detail page.
+RDKit computes Tanimoto in Python. Query returns Linker/Payload rows ranked by similarity. No linked-ADC expansion in search results — user clicks through to detail page. **Fingerprint params must match index time: radius=2, nbits=2048.**
 
 **`GET /api/v1/search/sequence` — Sequence similarity**
 
@@ -193,25 +194,26 @@ SELECT status, COUNT(*) AS cnt FROM adc GROUP BY status
 
 **Text search:** MariaDB `FULLTEXT` index on `name` fields (VARCHAR/TEXT) with `MATCH ... AGAINST` in natural language or boolean mode. For synonyms (JSON columns), use `JSON_SEARCH()` or `JSON_CONTAINS()`. For fuzzy/partial matching on names, use `LIKE '%term%'`. One query, no external search engine.
 
-**Structure similarity:** Convert query SMILES → Morgan fingerprint (RDKit). Compare against pre-computed fingerprints (`morgan_fp` column on Linker and Payload tables) stored as binary in DB. Tanimoto coefficient. Return top-N.
+**Structure similarity:** Convert query SMILES → Morgan fingerprint (RDKit, radius=2, nbits=2048). Compare against pre-computed fingerprints (`morgan_fp` column on Linker and Payload tables) stored as binary in DB. Tanimoto coefficient. Return top-N. Parameters must be identical at index and query time.
 
 **Sequence similarity:** For antibody sequence search, use Biopython's `Bio.Align.PairwiseAligner` for small-scale. If dataset grows, set up a local BLAST DB.
 
-## Frontend (Next.js + shadcn/ui)
+## Frontend (React + Vite + shadcn/ui)
 
 ### Dependencies (minimal)
-- `next` 14 — framework
+- `react` 18 + `vite` — SPA framework (no SSR)
+- `react-router` v7 — client-side routing
 - `shadcn/ui` — component library (blue primary color)
-- `@tanstack/react-table` — data tables (comes with shadcn)
-- `molstar` — 3D molecular viewer
-- `recharts` — homepage charts (shadcn has chart components built on this)
+- `molstar` — 3D molecular viewer (uses React internally — requires shared React runtime, which is why we use Vite instead of Next.js)
+- `recharts` — homepage charts
 
 ### Key Design Decisions
 
-1. **Server components by default** — fetch data on the server, render HTML. Client components only for interactive bits (search bar, 3D viewer, charts).
-2. **No state management library** — URL params for search state, React state for UI. That's it.
-3. **API calls via `fetch`** — no axios, no SWR, no react-query. Next.js `fetch` with caching is enough.
-4. **Mol\* as a client component** — lazy-loaded, only on ADC detail page. It's heavy (~2MB), don't load it everywhere.
+1. **SPA, not SSR** — Mol* v5 calls React internally. Next.js 14's SSR creates a React runtime conflict (`render is not a function`). Plain React + Vite = one React runtime = Mol* works.
+2. **No state management library** — URL params (via `useSearchParams`) for search state, React state for UI. That's it.
+3. **API calls via `fetch`** in `useEffect` — no axios, no SWR, no react-query. Simple `useState` + `useEffect` pattern for all data fetching.
+4. **Mol\* lazy-loaded** — `React.lazy(() => import('./MolViewer'))` + `<Suspense>`. It's heavy (~2MB), only load on ADC detail page.
+5. **No CORS proxy needed** — Backend has CORSMiddleware. Frontend fetches directly from `http://localhost:8001`.
 
 ## 3D Structure Pipeline (Offline)
 
@@ -219,21 +221,34 @@ This runs as a batch script, NOT as part of the web app.
 
 ```
 For each ADC:
-  1. Get antibody sequence → predict structure (ESMFold API or AlphaFold DB)
-  2. Get linker SMILES → generate 3D conformer (RDKit)
-  3. Get payload SMILES → generate 3D conformer (RDKit)
-  4. Assemble: attach linker-payload at conjugation site on antibody
-  5. Save as .pdb → store path in DB
+  1. Build full IgG from template (PDB 1HZH) + sequence superposition
+  2. Take linker_payload_smiles from ADC record ([*:1] = Ab end)
+  3. Record [*:1] atom index, replace with [H], embed (ETKDGv3), minimize (MMFF94)
+  4. Identify conjugation sites on antibody by conjugation_site type
+  5. Place DAR copies of linker-payload at sites (rigid-body toward target residue)
+  6. Save combined PDB → store path in DB
+  7. On ANY failure: set structure_3d_path = NULL, log error, continue
 ```
 
-**Conjugation site logic** (driven by `adc.conjugation_type` field):
-- Cysteine conjugation (most common): attach at interchain disulfide Cys residues
-- Lysine conjugation: attach at surface-exposed Lys
-- Site-specific: attach at engineered site (if known)
+**Why template-based IgG, not AlphaFold/ESMFold directly:**
+AlphaFold DB stores individual chains, not the IgG tetramer. ESMFold predicts single chains. To get a full 2H+2L IgG, superpose the antibody's specific heavy/light chain sequences onto a template IgG crystal structure (e.g., PDB 1HZH) using backbone fitting. This is simpler and sufficient for reference visualization.
+
+**Why `linker_payload_smiles` on ADC, not computed from separate SMILES:**
+The linker's `[*:2]` end connects to the payload via specific chemistry (e.g., PABC carbamate to MMAE's secondary amine). Simulating this reaction computationally is fragile and error-prone. Instead, store the pre-connected molecule in `adc.linker_payload_smiles` with `[*:1]` marking the antibody attachment atom. This is a curated datum, not a computed one.
+
+**Conjugation site identification** (driven by `adc.conjugation_site`):
+- `cysteine`: find interchain disulfide S-S bonds in PDB (IgG1: C220, C226, C229 EU numbering). These Cys become available after partial reduction.
+- `lysine`: compute solvent-accessible surface area per Lys residue. Select most exposed.
+- `engineered_cysteine` / `engineered_other`: use known residue position from literature.
+
+**Linker-payload placement:**
+- The `coupling_chemistry` field on Linker tells us the bond geometry at the antibody end (maleimide → thioether, NHS → amide, click → triazole).
+- Orient the `[*:1]` attachment atom toward the target residue's side-chain terminus.
+- This is approximate rigid-body placement, not covalent docking.
 
 **Antigen resolution:** ADC has no direct antigen FK. The antigen is resolved via `adc.antibody.antigen` — because the antibody-antigen binding is a biological property of the antibody itself.
 
-The assembly is approximate. We're showing topology, not running MD simulations.
+The assembly is approximate. We're showing topology, not running MD simulations. Label as "predicted/modeled structure."
 
 ## Data Seeding
 
@@ -244,4 +259,11 @@ Initial data sourced from:
 - ClinicalTrials.gov for trial data (NCT numbers)
 - AlphaFold DB for antibody structures where available
 
-Seed script reads curated CSV/JSON files and populates the DB.
+Seed script reads curated CSV/JSON files and populates the DB. Run after Alembic migrations.
+
+**Validation on import** (fail-fast per row, don't block the batch):
+- SMILES parseable by `Chem.MolFromSmiles()` — reject row if not
+- Amino acid sequences contain only valid residue letters (ACDEFGHIKLMNPQRSTVWY)
+- InChIKey matches SMILES where both are provided (`Chem.inchi.MolToInchiKey`)
+- `linker_payload_smiles` contains exactly one `[*:1]` attachment point
+- Morgan fingerprints computed and stored at index time (radius=2, nbits=2048)
