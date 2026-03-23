@@ -48,7 +48,7 @@
   top: 0 !important;
   right: 0 !important;
   left: auto !important;
-  width: 405px !important;
+  width: 255px !important;
   height: 100% !important;
   border-bottom: none !important;
   border-left: 1px solid hsl(var(--border)) !important;
@@ -56,7 +56,7 @@
 }
 
 .molstar-container .msp-layout-main {
-  right: 405px !important;
+  right: 255px !important;
   top: 0 !important;
 }
 
@@ -68,6 +68,17 @@
 
 .molstar-container .msp-sequence-wrapper {
   padding: 4px 6px !important;
+}
+
+/* Hide Mol* top-left controls (animation/trajectory/snapshot) */
+.molstar-container .msp-viewport-top-left-controls {
+  display: none !important;
+}
+
+/* Keep only Reset Zoom (1st), Screenshot (2nd), Selection Mode (4th) */
+/* Hide 3rd child (wrench + expand + settings + illumination) */
+.molstar-container .msp-viewport-controls-buttons > div:nth-child(3) {
+  display: none !important;
 }
 
 @theme inline {

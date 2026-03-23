@@ -40,23 +40,66 @@ async function applyPreset(plugin: PluginUIContext, preset: Preset, skipClear = 
       { theme: { globalName: "chain-id" as const } }
     );
   } else if (preset === "interactions") {
-    await plugin.builders.structure.representation.applyPreset(
+    // Show ligands as ball-and-stick + surrounding residues + interactions + labels
+    const ligand = await plugin.builders.structure.tryCreateComponentStatic(
       structureRef,
-      "polymer-and-ligand",
-      { theme: { globalName: "chain-id" as const } }
+      "ligand"
     );
-    // Re-fetch components after preset is applied
-    const updated = plugin.managers.structure.hierarchy.current.structures;
-    if (updated.length > 0 && updated[0].components) {
-      for (const comp of updated[0].components) {
-        await plugin.builders.structure.representation.addRepresentation(
-          comp.cell.transform.ref,
-          {
-            type: "interactions" as never,
-            color: "interaction-type" as never,
-          }
-        );
-      }
+    if (ligand) {
+      await plugin.builders.structure.representation.addRepresentation(
+        ligand,
+        { type: "ball-and-stick", color: "element-symbol" }
+      );
+    }
+    // Show protein residues near the ligand (interaction environment)
+    const surroundings = await plugin.builders.structure.tryCreateComponentFromExpression(
+      structureRef,
+      // @ts-expect-error -- Mol* internal expression types
+      (await import("molstar/lib/mol-script/language/expression")).MolScriptBuilder.struct.modifier.includeSurroundings({
+        0: (await import("molstar/lib/mol-script/language/expression")).MolScriptBuilder.struct.generator.atomGroups({
+          "entity-test": (await import("molstar/lib/mol-script/language/expression")).MolScriptBuilder.core.rel.eq([
+            (await import("molstar/lib/mol-script/language/expression")).MolScriptBuilder.ammp("entityType"),
+            "non-polymer"
+          ])
+        }),
+        radius: 5,
+        "as-whole-residues": true,
+      }),
+      "surroundings",
+      { label: "Interaction Environment" }
+    );
+    if (surroundings) {
+      await plugin.builders.structure.representation.addRepresentation(
+        surroundings,
+        { type: "ball-and-stick", color: "element-symbol", typeParams: { sizeFactor: 0.2 } }
+      );
+      // Add residue labels (3-letter code + number)
+      await plugin.builders.structure.representation.addRepresentation(
+        surroundings,
+        {
+          type: "label" as never,
+          typeParams: {
+            level: "residue" as never,
+            granularity: "residue" as never,
+          } as never,
+          color: "uniform" as never,
+          colorParams: { value: 0x333333 } as never,
+        }
+      );
+    }
+    // Add interaction lines on everything
+    const allComp = await plugin.builders.structure.tryCreateComponentStatic(
+      structureRef,
+      "all"
+    );
+    if (allComp) {
+      await plugin.builders.structure.representation.addRepresentation(
+        allComp,
+        {
+          type: "interactions" as never,
+          color: "interaction-type" as never,
+        }
+      );
     }
   }
 }
@@ -94,10 +137,11 @@ export default function MolViewer({ adcId }: { adcId: string }) {
         const pdbData = await res.text();
         if (cancelled) return;
 
+        const spec = DefaultPluginUISpec();
         const plugin = await createPluginUI({
           target: containerRef.current,
           spec: {
-            ...DefaultPluginUISpec(),
+            ...spec,
             layout: {
               initial: {
                 isExpanded: false,
@@ -234,7 +278,7 @@ export default function MolViewer({ adcId }: { adcId: string }) {
         )}
         {/* Preset buttons - top left corner over Mol* */}
         {!loading && !error && (
-          <div className="absolute top-2 left-2 z-20 flex gap-1">
+          <div className="absolute top-2 left-2 z-20 flex flex-col gap-1">
             {presets.map((p) => (
               <button
                 key={p.key}
