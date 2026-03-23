@@ -40,7 +40,10 @@ export interface Linker {
   cleavage_mechanism: string | null;
   coupling_chemistry: string | null;
   smiles: string | null;
+  inchi: string | null;
+  inchikey: string | null;
   formula: string | null;
+  iupac_name: string | null;
   mol_weight: number | null;
 }
 
@@ -52,7 +55,10 @@ export interface Payload {
   moa: string | null;
   bystander_effect: boolean | null;
   smiles: string | null;
+  inchi: string | null;
+  inchikey: string | null;
   formula: string | null;
+  iupac_name: string | null;
   mol_weight: number | null;
 }
 
@@ -81,6 +87,10 @@ export interface ADC {
   dar: number | null;
   conjugation_site: string | null;
   indications: string[] | null;
+  antibody_id: string;
+  linker_id: string;
+  payload_id: string;
+  linker_payload_smiles: string | null;
   antibody: Antibody;
   linker: Linker;
   payload: Payload;

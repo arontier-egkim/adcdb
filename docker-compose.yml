@@ -2,6 +2,7 @@ services:
   mariadb:
     image: mariadb:11.4
     container_name: adcdb-mariadb
+    restart: unless-stopped
     ports:
       - "3306:3306"
     environment:
@@ -11,6 +12,12 @@ services:
       MARIADB_PASSWORD: adcdb_pass
     volumes:
       - adcdb-mariadb-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
 volumes:
   adcdb-mariadb-data:

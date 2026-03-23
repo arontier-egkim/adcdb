@@ -9,20 +9,35 @@ export default function Browse() {
   const [adcs, setAdcs] = useState<ADCListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const status = searchParams.get("status") || "";
+  const q = searchParams.get("q") || "";
 
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams();
     if (status) params.set("status", status);
+    if (q) params.set("q", q);
     apiFetch<ADCListItem[]>(`/adcs?${params.toString()}`)
       .then(setAdcs)
       .catch(() => setAdcs([]))
       .finally(() => setLoading(false));
-  }, [status]);
+  }, [status, q]);
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Browse ADCs</h1>
+
+      <input
+        type="text"
+        value={q}
+        onChange={(e) => {
+          const next = new URLSearchParams(searchParams);
+          if (e.target.value) next.set("q", e.target.value);
+          else next.delete("q");
+          setSearchParams(next);
+        }}
+        placeholder="Filter by name..."
+        className="rounded-md border border-input px-3 py-2 text-sm bg-background max-w-xs"
+      />
 
       <div className="flex gap-2 flex-wrap">
         <button

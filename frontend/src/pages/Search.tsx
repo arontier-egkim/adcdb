@@ -148,7 +148,7 @@ export default function Search() {
             </tr></thead>
             <tbody>{simResults.map((r) => (
               <tr key={r.id} className="border-b border-border hover:bg-muted/30">
-                <td className="p-3"><Link to={`/${r.type || "antibody"}/${r.id}`} className="text-primary hover:underline">{r.name}</Link></td>
+                <td className="p-3"><Link to={`/${r.type || (tab === "sequence" ? "antibody" : "payload")}/${r.id}`} className="text-primary hover:underline">{r.name}</Link></td>
                 <td className="p-3 capitalize">{r.type || r.chain || "-"}</td>
                 <td className="p-3 text-right font-mono">{(tab === "structure" ? r.similarity : r.normalized_score)?.toFixed(3)}</td>
               </tr>

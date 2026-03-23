@@ -1,5 +1,3 @@
-import uuid
-
 from sqlalchemy import JSON, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from uuid_utils import uuid7

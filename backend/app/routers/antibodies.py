@@ -5,7 +5,7 @@ from sqlalchemy.orm import joinedload
 
 from app.database import get_db
 from app.models import ADC, Antibody, Antigen, Linker, Payload
-from app.schemas.antibody import AntibodyCreate, AntibodyRead
+from app.schemas.antibody import AntibodyRead
 from app.schemas.adc import ADCListItem
 
 router = APIRouter(prefix="/api/v1/antibodies", tags=["antibodies"])

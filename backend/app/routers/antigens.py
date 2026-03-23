@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models import ADC, Antibody, Antigen, Linker, Payload
-from app.schemas.antigen import AntigenCreate, AntigenRead
+from app.schemas.antigen import AntigenRead
 from app.schemas.adc import ADCListItem
 
 router = APIRouter(prefix="/api/v1/antigens", tags=["antigens"])

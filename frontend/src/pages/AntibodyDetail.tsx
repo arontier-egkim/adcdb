@@ -40,6 +40,12 @@ export default function AntibodyDetail() {
           <pre className="rounded-lg border border-border p-3 text-xs overflow-x-auto break-all whitespace-pre-wrap">{ab.heavy_chain_seq}</pre>
         </div>
       )}
+      {ab.light_chain_seq && (
+        <div className="space-y-2">
+          <h2 className="font-semibold">Light Chain Sequence</h2>
+          <pre className="rounded-lg border border-border p-3 text-xs overflow-x-auto break-all whitespace-pre-wrap">{ab.light_chain_seq}</pre>
+        </div>
+      )}
       {adcs.length > 0 && (
         <div className="space-y-3">
           <h2 className="font-semibold">ADCs using this antibody ({adcs.length})</h2>
