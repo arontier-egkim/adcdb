@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router";
 import { apiFetch, type Payload, type ADCListItem } from "@/lib/api";
+import MoleculeDrawing from "@/components/MoleculeDrawing";
 
 export default function PayloadDetail() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +26,7 @@ export default function PayloadDetail() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{payload.name}</h1>
+      {payload.smiles && payload.smiles !== "C" && <MoleculeDrawing smiles={payload.smiles} width={500} height={350} />}
       <div className="rounded-lg border border-border p-4">
         <dl className="grid grid-cols-2 gap-2 text-sm max-w-md">
           <dt className="text-muted-foreground">Target</dt><dd>{payload.target || "-"}</dd>

@@ -160,5 +160,6 @@ cp frontend/.env.example frontend/.env
 | Database | MariaDB 11.4 LTS, asyncmy driver |
 | Frontend | React 18, Vite, shadcn/ui (blue theme), React Router v7 |
 | 3D Viewer | Mol* (molstar) |
-| Chemistry | RDKit (fingerprints, conformers, molecular properties) |
+| 2D Structures | RDKit WASM (`@iktos-oss/rdkit-provider` + `@iktos-oss/molecule-representation`), ACS1996 drawing style |
+| Chemistry (server) | RDKit Python (fingerprints, conformers, molecular properties) |
 | Sequence | Biopython PairwiseAligner |

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router";
 import { apiFetch, type Linker, type ADCListItem } from "@/lib/api";
+import MoleculeDrawing from "@/components/MoleculeDrawing";
 
 export default function LinkerDetail() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +26,7 @@ export default function LinkerDetail() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{linker.name}</h1>
+      {linker.smiles && <MoleculeDrawing smiles={linker.smiles} width={500} height={350} />}
       <div className="rounded-lg border border-border p-4">
         <dl className="grid grid-cols-2 gap-2 text-sm max-w-md">
           <dt className="text-muted-foreground">Cleavable</dt><dd>{linker.cleavable ? "Yes" : "No"}</dd>

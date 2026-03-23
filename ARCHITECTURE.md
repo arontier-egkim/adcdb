@@ -37,7 +37,7 @@
 1. **Async SQLAlchemy** — FastAPI is async, so use async sessions. Simple.
 2. **No caching layer** — MariaDB is fast enough for this dataset size (thousands, not millions). Add Redis later only if needed.
 3. **File-based structure storage** — PDB files on disk, path stored in DB. No blob storage. If you outgrow disk, move to S3.
-4. **RDKit for everything chemistry** — molecular weight, fingerprints, 2D depictions, 3D conformers. One library.
+4. **RDKit (Python) for server-side chemistry** — molecular weight, fingerprints, 3D conformers. 2D depictions are handled client-side by RDKit WASM (see decision #6).
 5. **No celery/task queue** — 3D structure generation is a batch job run offline, not on-demand. Pre-compute and store.
 6. **CORSMiddleware** — Frontend (Vite default port 5173) calls backend (port 8001). Add `CORSMiddleware` to the FastAPI app with `allow_origins=["http://localhost:5173"]` in dev. Without this, the browser blocks every API call.
 7. **UUIDv7 primary keys** — Time-sorted (RFC 9562) so B-tree inserts are sequential. Avoids page fragmentation that random UUID v4 causes in MariaDB. Use `uuid7()` from the `uuid_utils` package.
@@ -205,6 +205,7 @@ SELECT status, COUNT(*) AS cnt FROM adc GROUP BY status
 - `react-router` v7 — client-side routing
 - `shadcn/ui` — component library (blue primary color)
 - `molstar` — 3D molecular viewer (uses React internally — requires shared React runtime, which is why we use Vite instead of Next.js)
+- `@iktos-oss/rdkit-provider` + `@iktos-oss/molecule-representation` — 2D molecule rendering from SMILES via RDKit WASM
 - `recharts` — homepage charts
 
 ### Key Design Decisions
@@ -214,6 +215,7 @@ SELECT status, COUNT(*) AS cnt FROM adc GROUP BY status
 3. **API calls via `fetch`** in `useEffect` — no axios, no SWR, no react-query. Simple `useState` + `useEffect` pattern for all data fetching.
 4. **Mol\* lazy-loaded** — `React.lazy(() => import('./MolViewer'))` + `<Suspense>`. It's heavy (~2MB), only load on ADC detail page.
 5. **No CORS proxy needed** — Backend has CORSMiddleware. Frontend fetches directly from `http://localhost:8001`.
+6. **RDKit WASM for 2D structures** — `<RDKitProvider>` wraps the app root (loads WASM once). `<MoleculeRepresentation>` renders interactive SVGs from SMILES on Linker and Payload detail pages. Linker SMILES with attachment points (`[*:1]`, `[*:2]`) are cleaned to `[H]` before rendering. **Drawing style: ACS1996** — the American Chemical Society 1996 specification, passed as drawing options to `<MoleculeRepresentation>`. ACS1996 specifies thicker bond lines, wider bond spacing, larger atom labels, and specific font sizing that makes molecular structures publication-quality. RDKit WASM applies these via `MolDrawOptions` internally when the component renders the SVG.
 
 ## 3D Structure Pipeline (Offline)
 

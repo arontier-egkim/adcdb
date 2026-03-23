@@ -13,7 +13,8 @@ Similar to [adcdb.idrblab.net](https://adcdb.idrblab.net/) with one addition: **
 | Database | **MariaDB 11.4 LTS** | Relational data, stable long-term support |
 | Frontend | **React 18 + Vite + shadcn/ui** (blue theme) | SPA, React Router, no SSR conflicts with Mol* |
 | 3D Viewer | **Mol\*** (molstar) | Industry standard, handles large PDB/mmCIF |
-| Chemistry | **RDKit** (server-side) | SMILES rendering, similarity search, molecular properties |
+| Chemistry (server) | **RDKit** (Python) | Similarity search, fingerprints, conformer generation |
+| Chemistry (client) | **@rdkit/rdkit** (WASM) via `@iktos-oss/rdkit-provider` | 2D molecule rendering in browser, ACS1996 drawing style |
 | Search | **MariaDB full-text + LIKE/COLLATE** | Good enough. No Elasticsearch needed. |
 
 ## Data Model
@@ -133,8 +134,8 @@ Payload ──────────────┘
 | `/adc/:id` | ADC detail: all fields, linked entities, activity data, **3D viewer** |
 | `/antibody/:id` | Antibody detail: sequences, linked ADCs |
 | `/antigen/:id` | Antigen detail: gene info, linked ADCs |
-| `/linker/:id` | Linker detail: 2D structure (SMILES render), properties |
-| `/payload/:id` | Payload detail: 2D structure, MOA, properties |
+| `/linker/:id` | Linker detail: **2D structure via RDKit WASM** (ACS1996 style), properties |
+| `/payload/:id` | Payload detail: **2D structure via RDKit WASM** (ACS1996 style), MOA, properties |
 | `/browse` | Browse by status, antigen, payload target — filterable table |
 | `/about` | Citations, data sources, contact |
 

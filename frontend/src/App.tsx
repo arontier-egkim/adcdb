@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router";
+import { RDKitProvider } from "@iktos-oss/rdkit-provider";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Browse from "./pages/Browse";
@@ -13,6 +14,7 @@ import NotFound from "./pages/NotFound";
 
 export default function App() {
   return (
+    <RDKitProvider>
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Home />} />
@@ -27,5 +29,6 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
+    </RDKitProvider>
   );
 }

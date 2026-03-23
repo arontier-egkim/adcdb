@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@iktos-oss/molecule-representation": "^1.12.3",
+    "@iktos-oss/rdkit-provider": "^2.10.2",
     "@tailwindcss/vite": "^4.2.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

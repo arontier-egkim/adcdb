@@ -126,7 +126,14 @@ ADC reaches Antigen transitively: `adc.antibody.antigen`. No direct FK from ADC 
 
 MariaDB has no native array type. `synonyms` and `indications` are stored as `JSON` columns. Queryable with `JSON_CONTAINS()` and `JSON_SEARCH()`. At this scale, no junction tables needed.
 
-## Notes on Linker SMILES
+## Notes on SMILES Fields
+
+SMILES fields on Linker and Payload are consumed in two places:
+
+1. **Server-side (Python RDKit):** Morgan fingerprint computation, molecular weight, 3D conformer generation. Handles `[*:1]`/`[*:2]` by replacing with `[H]` before processing.
+2. **Client-side (RDKit WASM via `@iktos-oss/rdkit-provider`):** 2D SVG rendering on detail pages using **ACS1996 drawing style** (American Chemical Society publication standard). Linker SMILES with `[*:1]`/`[*:2]` must be cleaned to `[H]` before passing to the renderer.
+
+### Linker SMILES attachment points
 
 Linker SMILES use labeled attachment points: `[*:1]` for the antibody-facing end, `[*:2]` for the payload-facing end. This makes standard InChI/InChIKey generation invalid for linkers (RDKit will error on wildcard atoms). Therefore `inchi` and `inchikey` on Linker are nullable.
 
