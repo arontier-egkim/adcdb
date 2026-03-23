@@ -1,5 +1,10 @@
-"""Batch generate 3D structures for all ADCs that have linker_payload_smiles."""
+"""Batch generate 3D structures for all ADCs that have linker_payload_smiles.
 
+When run with --regenerate, clears existing structure_3d_path values first
+so all structures are rebuilt (useful after template upgrades).
+"""
+
+import argparse
 import asyncio
 import sys
 from pathlib import Path
@@ -15,12 +20,30 @@ from app.structure.assembler import generate_and_save
 
 
 async def main():
+    parser = argparse.ArgumentParser(description="Generate 3D structures for ADCs")
+    parser.add_argument(
+        "--regenerate",
+        action="store_true",
+        help="Clear existing structure_3d_path values and regenerate all structures",
+    )
+    args = parser.parse_args()
+
     engine = create_async_engine(settings.DATABASE_URL, echo=False)
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     structures_dir = str(Path(__file__).resolve().parent.parent / "backend" / "structures")
 
     async with session_factory() as session:
+        if args.regenerate:
+            # Clear existing structure paths so all ADCs are regenerated
+            result = await session.execute(
+                update(ADC)
+                .where(ADC.linker_payload_smiles.is_not(None))
+                .values(structure_3d_path=None)
+            )
+            await session.commit()
+            print(f"Cleared structure_3d_path for {result.rowcount} ADCs")
+
         result = await session.execute(
             select(ADC.id, ADC.name, ADC.linker_payload_smiles, ADC.conjugation_site, ADC.dar)
             .where(ADC.linker_payload_smiles.is_not(None))
@@ -48,10 +71,10 @@ async def main():
                     print(f"  OK: {adc.name}")
                 else:
                     failed += 1
-                    print(f"  FAIL: {adc.name} — conformer generation returned None")
+                    print(f"  FAIL: {adc.name} -- conformer generation returned None")
             except Exception as e:
                 failed += 1
-                print(f"  FAIL: {adc.name} — {e}")
+                print(f"  FAIL: {adc.name} -- {e}")
 
         await session.commit()
         print(f"\nDone: {success} succeeded, {failed} failed")

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { DefaultPluginUISpec } from "molstar/lib/mol-plugin-ui/spec";
@@ -7,11 +7,76 @@ import "molstar/lib/mol-plugin-ui/skin/light.scss";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8001/api/v1";
 
+type Preset = "rainbow" | "surface" | "interactions";
+
+async function applyPreset(plugin: PluginUIContext, preset: Preset, skipClear = false) {
+  const structures = plugin.managers.structure.hierarchy.current.structures;
+  if (!structures.length) return;
+
+  const struct = structures[0];
+  const structureRef = struct.cell.transform.ref;
+
+  // Clear existing representations (skip on initial load)
+  if (!skipClear) {
+    await plugin.dataTransaction(async () => {
+      const update = plugin.state.data.build();
+      for (const comp of struct.components || []) {
+        update.delete(comp.cell.transform.ref);
+      }
+      await update.commit();
+    });
+  }
+
+  if (preset === "rainbow") {
+    await plugin.builders.structure.representation.applyPreset(
+      structureRef,
+      "polymer-and-ligand",
+      { theme: { globalName: "chain-id" as const } }
+    );
+  } else if (preset === "surface") {
+    await plugin.builders.structure.representation.applyPreset(
+      structureRef,
+      "molecular-surface",
+      { theme: { globalName: "chain-id" as const } }
+    );
+  } else if (preset === "interactions") {
+    await plugin.builders.structure.representation.applyPreset(
+      structureRef,
+      "polymer-and-ligand",
+      { theme: { globalName: "chain-id" as const } }
+    );
+    // Re-fetch components after preset is applied
+    const updated = plugin.managers.structure.hierarchy.current.structures;
+    if (updated.length > 0 && updated[0].components) {
+      for (const comp of updated[0].components) {
+        await plugin.builders.structure.representation.addRepresentation(
+          comp.cell.transform.ref,
+          {
+            type: "interactions" as never,
+            color: "interaction-type" as never,
+          }
+        );
+      }
+    }
+  }
+}
+
 export default function MolViewer({ adcId }: { adcId: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const pluginRef = useRef<PluginUIContext | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activePreset, setActivePreset] = useState<Preset>("rainbow");
+
+  const handlePreset = useCallback(async (preset: Preset) => {
+    if (!pluginRef.current) return;
+    setActivePreset(preset);
+    try {
+      await applyPreset(pluginRef.current, preset);
+    } catch (e) {
+      console.error("Preset error:", e);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -20,7 +85,6 @@ export default function MolViewer({ adcId }: { adcId: string }) {
       if (!containerRef.current) return;
 
       try {
-        // Fetch PDB first to fail fast
         const res = await fetch(`${API_BASE}/adcs/${adcId}/structure`);
         if (!res.ok) {
           setError("Structure not available");
@@ -30,7 +94,6 @@ export default function MolViewer({ adcId }: { adcId: string }) {
         const pdbData = await res.text();
         if (cancelled) return;
 
-        // Create Mol* plugin with React 18 render
         const plugin = await createPluginUI({
           target: containerRef.current,
           spec: {
@@ -39,11 +102,12 @@ export default function MolViewer({ adcId }: { adcId: string }) {
               initial: {
                 isExpanded: false,
                 showControls: true,
+                controlsDisplay: "landscape",
                 regionState: {
                   left: "hidden",
-                  top: "hidden",
+                  top: "full",
                   right: "hidden",
-                  bottom: "full",  // sequence viewer
+                  bottom: "hidden",
                 },
               },
             },
@@ -59,7 +123,6 @@ export default function MolViewer({ adcId }: { adcId: string }) {
         }
         pluginRef.current = plugin;
 
-        // Load PDB data
         const data = await plugin.builders.data.rawData({
           data: pdbData,
           label: "ADC Structure",
@@ -72,6 +135,22 @@ export default function MolViewer({ adcId }: { adcId: string }) {
           trajectory,
           "default"
         );
+
+        // Apply rainbow (chain-id) coloring as default once hierarchy is ready
+        const waitForStructure = () =>
+          new Promise<void>((resolve) => {
+            const check = () => {
+              const s = plugin.managers.structure.hierarchy.current.structures;
+              if (s.length > 0 && s[0].components && s[0].components.length > 0) {
+                resolve();
+              } else {
+                setTimeout(check, 50);
+              }
+            };
+            check();
+          });
+        await waitForStructure();
+        await applyPreset(plugin, "rainbow", true);
 
         if (!cancelled) setLoading(false);
       } catch (e: unknown) {
@@ -121,6 +200,12 @@ export default function MolViewer({ adcId }: { adcId: string }) {
     );
   }
 
+  const presets: { key: Preset; label: string }[] = [
+    { key: "rainbow", label: "Rainbow" },
+    { key: "surface", label: "Surface" },
+    { key: "interactions", label: "Interactions" },
+  ];
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -139,12 +224,30 @@ export default function MolViewer({ adcId }: { adcId: string }) {
         </div>
       </div>
       <div
-        className="rounded-lg border border-border overflow-hidden relative"
+        className="rounded-lg border border-border overflow-hidden relative molstar-container"
         style={{ height: 500 }}
       >
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
             <p className="text-muted-foreground">Loading 3D viewer...</p>
+          </div>
+        )}
+        {/* Preset buttons - top left corner over Mol* */}
+        {!loading && !error && (
+          <div className="absolute top-2 left-2 z-20 flex gap-1">
+            {presets.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => handlePreset(p.key)}
+                className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                  activePreset === p.key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background/90 text-foreground hover:bg-muted border border-border"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
           </div>
         )}
         <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
