@@ -215,7 +215,20 @@ SELECT status, COUNT(*) AS cnt FROM adc GROUP BY status
 3. **API calls via `fetch`** in `useEffect` — no axios, no SWR, no react-query. Simple `useState` + `useEffect` pattern for all data fetching.
 4. **Mol\* lazy-loaded** — `React.lazy(() => import('./MolViewer'))` + `<Suspense>`. It's heavy (~2MB), only load on ADC detail page.
 5. **No CORS proxy needed** — Backend has CORSMiddleware. Frontend fetches directly from `http://localhost:8001`.
-6. **RDKit WASM for 2D structures** — `<RDKitProvider>` wraps the app root (loads WASM once). `<MoleculeRepresentation>` renders interactive SVGs from SMILES on Linker and Payload detail pages. Linker SMILES with attachment points (`[*:1]`, `[*:2]`) are cleaned to `[H]` before rendering. **Drawing style: ACS1996** — the American Chemical Society 1996 specification, passed as drawing options to `<MoleculeRepresentation>`. ACS1996 specifies thicker bond lines, wider bond spacing, larger atom labels, and specific font sizing that makes molecular structures publication-quality. RDKit WASM applies these via `MolDrawOptions` internally when the component renders the SVG.
+6. **RDKit WASM for 2D structures** — `<RDKitProvider>` wraps the app root (loads WASM once). The worker file (`rdkit-worker-2.10.2.js`), `RDKit_minimal.js`, and `RDKit_minimal.wasm` must be in the `public/` folder so the browser can load them. `<MoleculeRepresentation>` renders interactive SVGs from SMILES on Linker and Payload detail pages via a `<MoleculeDrawing>` wrapper component. Linker SMILES with attachment points (`[*:1]`, `[*:2]`) are cleaned to `[H]` before rendering. **Drawing style: ACS1996** — exact values from RDKit's `rdMolDraw2D.SetACS1996Mode()`, passed via the `details` prop to `<MoleculeRepresentation>`:
+
+   ```
+   bondLineWidth: 0.6
+   scaleBondWidth: false
+   fixedBondLength: 7.2
+   additionalAtomLabelPadding: 0.066
+   multipleBondOffset: 0.18
+   annotationFontScale: 0.5
+   minFontSize: 6
+   maxFontSize: 40
+   ```
+
+   **Zoom and scale:** `<MoleculeRepresentation>` is set with `zoomable={true}` for mouse wheel zoom in/out (powered by `@visx/zoom`, already a dependency). The molecule renders at 2x default scale by doubling `fixedBondLength` from 7.2 to 14.4 — this makes bonds (and thus the entire molecule) twice as large inside the 400x300 canvas. All other ACS1996 parameters remain at their spec values.
 
 ## 3D Structure Pipeline (Offline)
 

@@ -26,7 +26,6 @@ export default function LinkerDetail() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{linker.name}</h1>
-      {linker.smiles && <MoleculeDrawing smiles={linker.smiles} width={500} height={350} />}
       <div className="rounded-lg border border-border p-4">
         <dl className="grid grid-cols-2 gap-2 text-sm max-w-md">
           <dt className="text-muted-foreground">Cleavable</dt><dd>{linker.cleavable ? "Yes" : "No"}</dd>
@@ -37,6 +36,7 @@ export default function LinkerDetail() {
           <dt className="text-muted-foreground">SMILES</dt><dd className="break-all text-xs">{linker.smiles || "-"}</dd>
         </dl>
       </div>
+      {linker.smiles && <MoleculeDrawing smiles={linker.smiles} />}
       {adcs.length > 0 && (
         <div className="space-y-3">
           <h2 className="font-semibold">ADCs using this linker ({adcs.length})</h2>

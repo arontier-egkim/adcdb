@@ -4,15 +4,16 @@ function cleanSmiles(smiles: string): string {
   return smiles.replace(/\[\*:\d+\]/g, "[H]");
 }
 
-// ACS1996 drawing options passed via the `details` prop to RDKit MolDrawOptions
+// ACS1996 drawing options — values from RDKit's rdMolDraw2D.SetACS1996Mode()
 const ACS1996_DETAILS: Record<string, unknown> = {
-  bondLineWidth: 1.2,
-  minFontSize: 10,
-  annotationFontScale: 0.75,
-  additionalAtomLabelPadding: 0.05,
-  multipleBondOffset: 0.15,
-  scaleBondWidth: true,
-  fixedBondLength: 25,
+  bondLineWidth: 0.6,
+  scaleBondWidth: false,
+  fixedBondLength: 14.4,  // 2x ACS1996 default (7.2) for larger molecule rendering
+  additionalAtomLabelPadding: 0.066,
+  multipleBondOffset: 0.18,
+  annotationFontScale: 0.5,
+  minFontSize: 6,
+  maxFontSize: 40,
 };
 
 export default function MoleculeDrawing({
@@ -27,12 +28,13 @@ export default function MoleculeDrawing({
   const cleaned = cleanSmiles(smiles);
 
   return (
-    <div className="rounded-lg border border-border bg-white p-4 flex items-center justify-center">
+    <div className="rounded-lg border border-border bg-white p-4 flex items-center justify-center overflow-hidden">
       <MoleculeRepresentation
         smiles={cleaned}
         width={width}
         height={height}
         details={ACS1996_DETAILS}
+        zoomable
       />
     </div>
   );

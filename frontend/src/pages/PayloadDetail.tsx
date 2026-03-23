@@ -26,7 +26,6 @@ export default function PayloadDetail() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{payload.name}</h1>
-      {payload.smiles && payload.smiles !== "C" && <MoleculeDrawing smiles={payload.smiles} width={500} height={350} />}
       <div className="rounded-lg border border-border p-4">
         <dl className="grid grid-cols-2 gap-2 text-sm max-w-md">
           <dt className="text-muted-foreground">Target</dt><dd>{payload.target || "-"}</dd>
@@ -38,6 +37,7 @@ export default function PayloadDetail() {
           <dt className="text-muted-foreground">SMILES</dt><dd className="break-all text-xs">{payload.smiles || "-"}</dd>
         </dl>
       </div>
+      {payload.smiles && payload.smiles !== "C" && <MoleculeDrawing smiles={payload.smiles} />}
       {adcs.length > 0 && (
         <div className="space-y-3">
           <h2 className="font-semibold">ADCs using this payload ({adcs.length})</h2>

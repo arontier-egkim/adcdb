@@ -134,8 +134,8 @@ Payload ──────────────┘
 | `/adc/:id` | ADC detail: all fields, linked entities, activity data, **3D viewer** |
 | `/antibody/:id` | Antibody detail: sequences, linked ADCs |
 | `/antigen/:id` | Antigen detail: gene info, linked ADCs |
-| `/linker/:id` | Linker detail: **2D structure via RDKit WASM** (ACS1996 style), properties |
-| `/payload/:id` | Payload detail: **2D structure via RDKit WASM** (ACS1996 style), MOA, properties |
+| `/linker/:id` | Linker detail: **2D structure via RDKit WASM** (ACS1996 style, zoomable, 2x default scale), properties |
+| `/payload/:id` | Payload detail: **2D structure via RDKit WASM** (ACS1996 style, zoomable, 2x default scale), MOA, properties |
 | `/browse` | Browse by status, antigen, payload target — filterable table |
 | `/about` | Citations, data sources, contact |
 
@@ -215,8 +215,9 @@ adcdb/
 │   │   ├── pages/            # Route components
 │   │   ├── components/       # UI components
 │   │   │   ├── ui/           # shadcn primitives
-│   │   │   ├── MolViewer.tsx # Mol* createPluginUI (lazy-loaded)
-│   │   │   ├── Layout.tsx    # Nav + footer shell
+│   │   │   ├── MolViewer.tsx     # Mol* createPluginUI (lazy-loaded)
+│   │   │   ├── MoleculeDrawing.tsx # 2D SMILES→SVG via MoleculeRepresentation (ACS1996)
+│   │   │   ├── Layout.tsx        # Nav + footer shell
 │   │   │   └── ErrorBoundary.tsx
 │   │   └── lib/              # API client, utils
 │   └── public/

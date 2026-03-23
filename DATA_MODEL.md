@@ -131,7 +131,7 @@ MariaDB has no native array type. `synonyms` and `indications` are stored as `JS
 SMILES fields on Linker and Payload are consumed in two places:
 
 1. **Server-side (Python RDKit):** Morgan fingerprint computation, molecular weight, 3D conformer generation. Handles `[*:1]`/`[*:2]` by replacing with `[H]` before processing.
-2. **Client-side (RDKit WASM via `@iktos-oss/rdkit-provider`):** 2D SVG rendering on detail pages using **ACS1996 drawing style** (American Chemical Society publication standard). Linker SMILES with `[*:1]`/`[*:2]` must be cleaned to `[H]` before passing to the renderer.
+2. **Client-side (RDKit WASM via `@iktos-oss/rdkit-provider`):** 2D SVG rendering on detail pages using **ACS1996 drawing style** — exact parameter values from RDKit's `rdMolDraw2D.SetACS1996Mode()` (bondLineWidth=0.6, scaleBondWidth=false, fixedBondLength=7.2, etc.), passed via the `details` prop to `<MoleculeRepresentation>`. Rendered at 2x default scale (`fixedBondLength` doubled from 7.2 to 14.4) with mouse wheel zoom enabled (`zoomable={true}`). Linker SMILES with `[*:1]`/`[*:2]` must be cleaned to `[H]` before passing to the renderer. Worker and WASM files must be in `public/`.
 
 ### Linker SMILES attachment points
 
